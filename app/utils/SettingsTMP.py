@@ -8,4 +8,8 @@ RABBITMQ_HOST = "192.168.213.28"
 RABBITMQ_QUEUE_get = 'TODB'  # Имя очереди
 RABBITMQ_QUEUE_post = 'TOHERE'  # Имя очереди
 
+LLM_translate = "True"
+Brocker = "rabbit"
+
+port=5000
 #прочитать про .env

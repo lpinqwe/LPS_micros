@@ -5,13 +5,17 @@ from app.utils.BrockerManager import BrokerM
 from app.utils.RestManager import RestAPIHandler
 from app.utils.factory import Factory
 from app.utils.configurator import Configurator
-
+from app.utils import SettingsTMP
 app = Flask(__name__)
 configurator = Configurator("config.json")
-configurator.configure()
+
 factory = Factory()
-broker = RestAPIHandler(factory, app)
-# broker = BrokerM(factory)  # <-- если хочешь переключиться на RabbitMQ
+
+if SettingsTMP.Brocker=="rabbit":
+    broker = BrokerM(factory)
+else:
+    broker = RestAPIHandler(factory, app)
+#
 
 objList = [factory, broker]
 
