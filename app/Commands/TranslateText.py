@@ -26,7 +26,7 @@ class TranslateText(Command):
         # Теперь используем синглтон для запроса к GPT
         llm_request = LLMrequest()  # Получаем существующий экземпляр синглтона
         prompt=self.prompt % language
-        title = llm_request.translate_text(prompt, payload=text, languageAnswer=language)
+        title = llm_request.translate(prompt, payload=text, languageAnswer=language)
 
 
         feed = Feedback(payload=title, ID_of_text=user, purpose=pur)

@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 
 class Translator(ABC):
     @abstractmethod
-    def translate_text(self, text: str, source_lang: str, target_lang: str) -> str:
+    def translate(self, text: str, source_lang: str, target_lang: str) -> str:
         """
         Переводит текст с указанного языка на целевой язык.
 

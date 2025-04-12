@@ -9,7 +9,7 @@ RABBITMQ_QUEUE_get = 'TODB'  # Имя очереди
 RABBITMQ_QUEUE_post = 'TOHERE'  # Имя очереди
 
 LLM_translate = "True"
-Brocker = "notrabbit"
+Brocker = "rabbit"
 
 port=5000
 #прочитать про .env
