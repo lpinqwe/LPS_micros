@@ -1,5 +1,7 @@
 import json
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from prometheus_client import Counter, Summary
+import time
 
 from app.interfaces.command import Command
 from app.interfaces.feedback import Feedback
@@ -7,6 +9,9 @@ from app.prompts import prompts
 from app.utils import SettingsTMP
 from app.utils.LLMrequest import LLMrequest
 
+# Определяем метрики для Prometheus
+TRANSLATION_REQUEST_COUNT = Counter('multi_translation_requests_total', 'Total number of translation requests', ['status', 'language'])
+TRANSLATION_REQUEST_DURATION = Summary('multi_translation_request_duration_seconds', 'Duration of translation requests in seconds', ['language'])
 
 class MultiTranslate(Command):
     languages = ["polish", "english", "russian"]
@@ -20,18 +25,29 @@ class MultiTranslate(Command):
         """Процесс перевода и извлечения заголовка для одного языка."""
         print(f"language: {language}")
 
+        # Обрабатываем время для запроса перевода
+        start_time = time.time()
+
+        # Перевод и извлечение заголовка
         prompt = prompts.prompt_extract_title % language.upper()
         title = llm_request.translate_text(prompt, payload=text, languageAnswer=language)
 
         prompt = prompts.prompt_translate % language.upper()
-
         translated = llm_request.translate_text(prompt, payload=text, languageAnswer=language)
 
+        # Замеряем время выполнения
+        duration = time.time() - start_time
+        TRANSLATION_REQUEST_DURATION.labels(language=language).observe(duration)
+
+        # Создаем объект ответа
         tmpjson = {
             "title": title,
             "language": language,
             "message": translated
         }
+
+        # Увеличиваем счетчик успешных запросов
+        TRANSLATION_REQUEST_COUNT.labels(status='success', language=language).inc()
 
         return tmpjson
 

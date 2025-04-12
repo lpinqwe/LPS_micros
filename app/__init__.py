@@ -5,6 +5,9 @@ from app.utils.factory import Factory
 from app.utils.configurator import Configurator
 from app.utils import SettingsTMP
 from app.utils.logger import get_logger
+from prometheus_client import start_http_server, Counter, Summary
+from prometheus_client import generate_latest
+
 
 # Initialize the logger
 logger = get_logger('app.run')
@@ -25,7 +28,13 @@ else:
 # List of objects for health check
 objList = [factory, broker]
 
+# Initialize Prometheus metrics
+REQUEST_COUNT = Counter('http_requests_total', 'Total number of HTTP requests', ['method', 'endpoint'])
+REQUEST_DURATION = Summary('http_request_duration_seconds', 'Duration of HTTP requests in seconds',
+                           ['method', 'endpoint'])
 
+
+# Health check route with Prometheus metrics
 @app.route('/health', methods=['GET'])
 def lifecheck():
     logger.info("Health check initiated")
@@ -47,6 +56,18 @@ def lifecheck():
         return jsonify({"status": "error", "details": resp}), 500
 
 
+# Metrics endpoint for Prometheus
+@app.route('/metrics')
+def metrics():
+    # Increment the request count for the /metrics endpoint
+    REQUEST_COUNT.labels(method='GET', endpoint='/metrics').inc()
+    return generate_latest()
+
+
 if __name__ == '__main__':
+    # Start the Prometheus HTTP server on port 8000
+    start_http_server(8000)
+
+    # Start the Flask app
     logger.info("Starting Flask application")
     app.run(debug=True)
