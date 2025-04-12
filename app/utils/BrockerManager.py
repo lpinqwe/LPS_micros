@@ -5,6 +5,10 @@ import pika
 from app.PrivacyAndLogic import PrivacyAndLogic
 from app.interfaces.messageHandler import MessageHandler
 from app.utils import SettingsTMP
+from app.utils.logger import get_logger
+
+# Initialize the logger
+logger = get_logger('app.BrokerM')
 
 
 class BrokerM(MessageHandler):
@@ -17,9 +21,12 @@ class BrokerM(MessageHandler):
     def lifeCheck(self):
         try:
             if self.connection:
+                logger.info("Broker connection is live.")
                 return [True, "brocker"]
+            logger.warning("Broker connection is not established.")
             return [False, "brocker"]
         except Exception as e:
+            logger.error(f"Error in lifeCheck: {str(e)}")
             return [e, "broker"]
 
     def __init__(self, FactoryObj):
@@ -30,7 +37,7 @@ class BrokerM(MessageHandler):
             rabbitmq_user = os.getenv('RABBITMQ_USER', 'guest')
             rabbitmq_password = os.getenv('RABBITMQ_PASSWORD', 'guest')
 
-            print(f"Connecting to RabbitMQ at {rabbitmq_host}:{rabbitmq_port} with user {rabbitmq_user}")
+            logger.info(f"Connecting to RabbitMQ at {rabbitmq_host}:{rabbitmq_port} with user {rabbitmq_user}")
 
             credentials = pika.PlainCredentials(rabbitmq_user, rabbitmq_password)
             connection_params = pika.ConnectionParameters(
@@ -44,48 +51,52 @@ class BrokerM(MessageHandler):
 
             self.channel.queue_declare(queue=SettingsTMP.RABBITMQ_QUEUE_post)
             self.channel.queue_declare(queue=SettingsTMP.RABBITMQ_QUEUE_get)
-            print("RabbitMQ connection established successfully.")
+            logger.info("RabbitMQ connection established successfully.")
 
         except Exception as e:
-            print(f"Failed to connect to RabbitMQ: {e}")
+            logger.error(f"Failed to connect to RabbitMQ: {str(e)}")
             raise
 
     def send_message(self, message: str):
-        self.channel.basic_publish(exchange='', routing_key=SettingsTMP.RABBITMQ_QUEUE_post, body=message)
-        print(f" [x] Sent message: {message}")
-
-    # def receive_messages(self):
-    #     self.channel.basic_consume(queue=SettingsTMP.RABBITMQ_QUEUE_get, on_message_callback=self.callback,
-    #                                auto_ack=True)
-    #     print(' [*] Waiting for messages. To exit press CTRL+C')
-    #     self.channel.start_consuming()
+        try:
+            self.channel.basic_publish(exchange='', routing_key=SettingsTMP.RABBITMQ_QUEUE_post, body=message)
+            logger.info(f" [x] Sent message: {message}")
+        except Exception as e:
+            logger.error(f"Error sending message: {str(e)}")
 
     def receive_messages(self):
-        print("start consuming")
-        self.consumerThread = threading.Thread(target=self.receive_messages)
-        self.consumerThread.start()
+        try:
+            logger.info("Start consuming messages.")
+            self.consumerThread = threading.Thread(target=self.receive_messages)
+            self.consumerThread.start()
+        except Exception as e:
+            logger.error(f"Error while starting consumer thread: {str(e)}")
 
     def callback(self, ch, method, properties, body):
-        print(f" [x] Received message: {body.decode()}")
+        logger.info(f" [x] Received message: {body.decode()}")
         tmp = body.decode()
 
         try:
             tmp_dict = json.loads(tmp)
+            logger.info("Message decoded successfully.")
             tmp_dict = self.PAL.process(tmp_dict)
             tmp = json.dumps(tmp_dict)
-
+            logger.debug(f"Processed message: {tmp}")
         except json.JSONDecodeError:
-            print("Error decoding JSON message")
+            logger.error("Error decoding JSON message")
 
-        tmp = self.factory.execute_command(tmp)
-
-        if tmp:
-            print("EXAMPLE")
-            print(str(tmp))
-            self.send_message(str(tmp))
+        try:
+            tmp = self.factory.execute_command(tmp)
+            if tmp:
+                logger.info(f"Command executed successfully: {str(tmp)}")
+                self.send_message(str(tmp))
+        except Exception as e:
+            logger.error(f"Error executing command: {str(e)}")
 
     def __del__(self):
         try:
-            self.connection.close()
-        except:
-            print("connection = none")
+            if self.connection:
+                self.connection.close()
+                logger.info("RabbitMQ connection closed.")
+        except Exception as e:
+            logger.error(f"Error closing connection: {str(e)}")

@@ -26,7 +26,7 @@ class ExtractTitle(Command):
         language=payload['language']
         # Теперь используем синглтон для запроса к GPT
         llm_request = LLMrequest()  # Получаем существующий экземпляр синглтона
-        title = llm_request.translate(self.prompt, payload=text, languageAnswer=language)
+        title = llm_request.translate_text(self.prompt, payload=text, languageAnswer=language)
 
 
         feed = Feedback(payload=title, ID_of_text=user, purpose=pur)

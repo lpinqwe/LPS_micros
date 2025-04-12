@@ -5,7 +5,6 @@ from app.interfaces.command import Command
 from app.interfaces.feedback import Feedback
 from app.prompts import prompts
 from app.utils import SettingsTMP
-from app.utils.GoogleTranslator import GoogleTranslateRequest as GTR
 from app.utils.LLMrequest import LLMrequest
 
 
@@ -22,15 +21,11 @@ class MultiTranslate(Command):
         print(f"language: {language}")
 
         prompt = prompts.prompt_extract_title % language.upper()
-        title = llm_request.translate(prompt, payload=text, languageAnswer=language)
+        title = llm_request.translate_text(prompt, payload=text, languageAnswer=language)
 
         prompt = prompts.prompt_translate % language.upper()
 
-        if SettingsTMP.LLM_translate == "True":
-            translated = llm_request.translate(prompt, payload=text, languageAnswer=language)
-
-        else:
-            translated = GTR.translate(prompt, payload=text, languageAnswer=language, prompt="")
+        translated = llm_request.translate_text(prompt, payload=text, languageAnswer=language)
 
         tmpjson = {
             "title": title,
