@@ -19,7 +19,6 @@ class TranslateText(Command):
     def execute(self) -> Feedback:
         command_entity = json.loads(self.body_json)
         pur = command_entity['purpose']
-        user = command_entity['id']
         payload = json.loads(command_entity["payload"])
         text=payload['text']
         language=payload['language']
@@ -29,7 +28,7 @@ class TranslateText(Command):
         title = llm_request.translate(prompt, payload=text, languageAnswer=language)
 
 
-        feed = Feedback(payload=title, ID_of_text=user, purpose=pur)
+        feed = Feedback(payload=title, purpose=pur)
         print(f"RECIEVE TO CommandExtractTitle {self.body_json}")
         return feed
 

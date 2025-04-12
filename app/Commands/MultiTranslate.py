@@ -44,7 +44,6 @@ class MultiTranslate(Command):
         print("multi translating")
         command_entity = json.loads(self.body_json)
         pur = command_entity['purpose']
-        id_msg = command_entity['id']
         text = command_entity['message']
 
         # Инициализируем LLMrequest для каждого потока
@@ -65,7 +64,7 @@ class MultiTranslate(Command):
                 ans_multi_language.append(result)
 
         # Создаем объект Feedback с результатами
-        feed = Feedback(payload=ans_multi_language, ID_of_text=id_msg, purpose=pur)
+        feed = Feedback(payload=ans_multi_language, purpose=pur)
         print(f"RECIEVE TO CommandExtractTitle {self.body_json}")
 
         return feed

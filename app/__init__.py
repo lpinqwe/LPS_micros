@@ -1,22 +1,27 @@
 # run.py or __init__.py
+import threading
 
 from flask import Flask, jsonify
-from app.utils.BrockerManager import BrokerM
 from app.utils.RestManager import RestAPIHandler
 from app.utils.factory import Factory
 from app.utils.configurator import Configurator
-from app.utils import SettingsTMP
+from app.utils.BrockerManager import BrockerM
 app = Flask(__name__)
-configurator = Configurator("config.json")
-
+#configurator = Configurator("config.json")
+#configurator.configure()
 factory = Factory()
-
-if SettingsTMP.Brocker=="rabbit":
-    broker = BrokerM(factory)
-else:
-    broker = RestAPIHandler(factory, app)
+broker = RestAPIHandler(factory, app)
 #
+#
+# broker =BrockerM(factory)
+# def runAll():
+#     thread_msg = threading.Thread(target=broker.start_consuming)
+#     thread_msg.start()
+#
+# runAll()
 
+
+broker.receive_messages()
 objList = [factory, broker]
 
 @app.route('/health', methods=['GET'])
