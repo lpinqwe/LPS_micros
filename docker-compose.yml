@@ -1,0 +1,82 @@
+version: "3.9"
+
+services:
+  rabbitmq:
+    image: rabbitmq:management
+    hostname: rabbitmq
+    restart: always
+    environment:
+      RABBITMQ_DEFAULT_USER: myuser
+      RABBITMQ_DEFAULT_PASS: mypassword
+
+    volumes:
+      - ./rabbitmq:/var/lib/rabbitmq
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 100M
+        reservations:
+          cpus: '0.5'
+          memory: 10M
+    ports:
+      - 15672:15672
+      - 5672:5672
+    networks:
+      - app_network
+      ###
+
+  flask-app:
+    image: backend_lps_v_alpha
+    ports:
+      - "5000:5000"
+    #environment:
+    #  - RABBITMQ_HOST=rabbitmq
+    #  - RABBITMQ_PORT=5672
+    #  - RABBITMQ_USER=myuser
+    #  - RABBITMQ_PASSWORD=mypassword
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:5000/health" ]
+      interval: 30s
+      retries: 3
+      start_period: 10s
+      timeout: 5s
+    restart: on-failure
+
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 30M
+        reservations:
+          cpus: '0.2'
+          memory: 10M
+
+    networks:
+      - app_network
+
+
+  pg:
+    image: postgres:14.1-alpine
+    restart: always
+    command: 'postgres'
+    volumes:
+      - /opt/dev/channel/pg:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - PGDATA=/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 50M
+        reservations:
+          cpus: '0.2'
+          memory: 20M
+    ports:
+      - 25432:5432
+
+networks:
+  app_network:
+    driver: bridge
